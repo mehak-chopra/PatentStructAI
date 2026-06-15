@@ -190,3 +190,51 @@ def get_patent_pages(
         )
 
         return result.fetchall()
+    
+def insert_failed_patent(
+    patent_number,
+    error_message
+):
+
+    query = text("""
+        INSERT IGNORE INTO failed_patents
+        (
+            patent_number,
+            error_message
+        )
+        VALUES
+        (
+            :patent_number,
+            :error_message
+        )
+    """)
+
+    with engine.begin() as conn:
+
+        conn.execute(
+            query,
+            {
+                "patent_number":
+                    patent_number,
+
+                "error_message":
+                    error_message
+            }
+        )
+
+
+def get_failed_patents():
+
+    query = text("""
+        SELECT
+            patent_number,
+            error_message,
+            failed_at
+        FROM failed_patents
+    """)
+
+    with engine.begin() as conn:
+
+        result = conn.execute(query)
+
+        return result.fetchall()

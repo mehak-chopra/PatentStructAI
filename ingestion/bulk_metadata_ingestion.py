@@ -11,7 +11,8 @@ from ingestion.metadata_fetcher import (
 )
 
 from database.patent_repository import (
-    insert_patent
+    insert_patent,
+    insert_failed_patent
 )
 
 
@@ -68,6 +69,11 @@ def process_patent(
 
         print(e)
 
+        insert_failed_patent(
+            patent_number,
+            str(e)
+        )
+        
         return False
 
 
