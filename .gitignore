@@ -1,0 +1,71 @@
+# ==================================================
+# PatentStructAI - Git Ignore
+# ==================================================
+
+# --------------------------
+# Python
+# --------------------------
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --------------------------
+# Environment Variables
+# --------------------------
+.env
+
+# --------------------------
+# Patent Data (Generated)
+# --------------------------
+data/extracted_images/
+data/cropped_structures/
+data/temp/*.pdf
+
+# Keep patent_numbers.txt
+!data/temp/patent_numbers.txt
+
+# --------------------------
+# Machine Learning Models
+# --------------------------
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# --------------------------
+# Annotation / Training Data
+# --------------------------
+annotations/
+runs/
+datasets/
+wandb/
+
+# --------------------------
+# Jupyter
+# --------------------------
+.ipynb_checkpoints/
+
+# --------------------------
+# IDE
+# --------------------------
+.vscode/
+
+# --------------------------
+# Logs
+# --------------------------
+*.log
+
+# --------------------------
+# Database Files
+# --------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# --------------------------
+# Operating System Files
+# --------------------------
+.DS_Store
+Thumbs.db

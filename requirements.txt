@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+python-dotenv
+requests
+beautifulsoup4
+tqdm
+pymupdf
+pillow
+numpy
+pandas
+rdkit
+faiss-cpu
+torch
+torchvision
