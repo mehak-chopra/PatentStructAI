@@ -13,6 +13,7 @@ from database.patent_repository import (
     get_patents_for_processing,
     insert_patent_page,
     mark_pdf_downloaded,
+    mark_pdf_unavailable,
     mark_images_extracted
 )
 
@@ -30,6 +31,15 @@ def process_patent(
         )
 
         if not pdf_path:
+
+            mark_pdf_unavailable(
+                patent.id
+            )
+
+            print(
+                f"⚠️ No PDF available: "
+                f"{patent.patent_number}"
+            )
 
             return False
 

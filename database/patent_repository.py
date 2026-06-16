@@ -156,6 +156,7 @@ def get_patents_for_processing():
             pdf_url
         FROM patents
         WHERE images_extracted = FALSE
+            AND pdf_available = TRUE
             AND pdf_url IS NOT NULL
     """)
 
@@ -238,3 +239,146 @@ def get_failed_patents():
         result = conn.execute(query)
 
         return result.fetchall()
+    
+def get_patent_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM patents
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+
+
+def get_page_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM patent_pages
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+
+
+def get_failed_patent_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM failed_patents
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+
+
+def get_country_stats():
+
+    query = text("""
+        SELECT
+            country,
+            COUNT(*) AS total
+        FROM patents
+        GROUP BY country
+        ORDER BY total DESC
+    """)
+
+    with engine.begin() as conn:
+
+        result = conn.execute(query)
+
+        return result.fetchall()
+
+
+def get_average_pages_per_patent():
+
+    query = text("""
+        SELECT
+            AVG(page_count)
+        FROM
+        (
+            SELECT
+                patent_id,
+                COUNT(*) AS page_count
+            FROM patent_pages
+            GROUP BY patent_id
+        ) t
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+    
+def mark_pdf_unavailable(
+    patent_id
+):
+
+    query = text("""
+        UPDATE patents
+        SET pdf_available = FALSE
+        WHERE id = :patent_id
+    """)
+
+    with engine.begin() as conn:
+
+        conn.execute(
+            query,
+            {
+                "patent_id": patent_id
+            }
+        )
+
+def get_no_pdf_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM patents
+        WHERE pdf_available = FALSE
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+    
+def get_no_pdf_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM patents
+        WHERE pdf_available = FALSE
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
+
+
+def get_processed_patent_count():
+
+    query = text("""
+        SELECT COUNT(*)
+        FROM patents
+        WHERE images_extracted = TRUE
+    """)
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query
+        ).scalar()
