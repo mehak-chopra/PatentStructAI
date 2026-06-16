@@ -45,6 +45,19 @@ PatentStructAI aims to automate this workflow using computer vision, machine lea
 * Patent page indexing
 * Large-scale document processing pipeline
 
+### Dataset Analytics
+
+* Patent statistics generation
+* Country-wise patent distribution
+* Failed patent tracking
+* PDF availability monitoring
+
+### Annotation Pipeline
+
+* Random page sampling
+* Annotation dataset creation
+* Chemical region detection dataset preparation
+
 ### Chemical Structure Extraction (Planned)
 
 * Chemical structure localization
@@ -74,37 +87,31 @@ PatentStructAI aims to automate this workflow using computer vision, machine lea
 ## Current Pipeline
 
 Patent Numbers
-
 ↓
-
 Metadata Extraction
-
 ↓
-
 Patent Database
-
 ↓
-
+Failed Patent Tracking
+↓
 PDF Download
-
 ↓
-
+PDF Availability Validation
+↓
 Page Rendering
-
 ↓
-
 Patent Page Storage
-
 ↓
-
+Dataset Analytics
+↓
+Random Sampling
+↓
+Annotation Pipeline (Current Stage)
+↓
 Structure Detection (Upcoming)
-
 ↓
-
 SMILES Generation (Upcoming)
-
 ↓
-
 Similarity Search (Upcoming)
 
 ---

@@ -382,3 +382,26 @@ def get_processed_patent_count():
         return conn.execute(
             query
         ).scalar()
+
+def get_random_pages(
+    limit
+):
+
+    query = text("""
+        SELECT
+            image_path
+        FROM patent_pages
+        ORDER BY RAND()
+        LIMIT :limit
+    """)
+
+    with engine.begin() as conn:
+
+        result = conn.execute(
+            query,
+            {
+                "limit": limit
+            }
+        )
+
+        return result.fetchall()

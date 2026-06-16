@@ -37,7 +37,14 @@ data/temp/*.pdf
 # --------------------------
 # Annotation / Training Data
 # --------------------------
-annotations/
+# Annotation outputs
+annotations/raw_pages/
+
+# Training outputs
+runs/
+datasets/
+wandb/
+
 runs/
 datasets/
 wandb/
