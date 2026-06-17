@@ -405,3 +405,44 @@ def get_random_pages(
         )
 
         return result.fetchall()
+    
+def get_all_patent_pages():
+
+    query = text("""
+        SELECT
+            id,
+            image_path
+        FROM patent_pages
+    """)
+
+    with engine.begin() as conn:
+
+        result = conn.execute(query)
+
+        return result.fetchall()
+
+
+def update_page_triage(
+    page_id,
+    chemistry_score,
+    contains_chemistry
+):
+
+    query = text("""
+        UPDATE patent_pages
+        SET
+            chemistry_score = :chemistry_score,
+            contains_chemistry = :contains_chemistry
+        WHERE id = :page_id
+    """)
+
+    with engine.begin() as conn:
+
+        conn.execute(
+            query,
+            {
+                "page_id": page_id,
+                "chemistry_score": chemistry_score,
+                "contains_chemistry": contains_chemistry
+            }
+        )
