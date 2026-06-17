@@ -58,11 +58,19 @@ PatentStructAI aims to automate this workflow using computer vision, machine lea
 * Annotation dataset creation
 * Chemical region detection dataset preparation
 
+### YOLO Dataset Preparation
+
+* CVAT-based annotation workflow
+* YOLO format label generation
+* Automated image-label synchronization
+* Chemical structure bounding box annotations
+* Initial dataset containing 106 manually annotated chemical structures
+
 ### Chemical Structure Extraction (Planned)
 
-* Chemical structure localization
-* Structure segmentation
-* Structure image extraction
+* Chemical structure localization (In Progress)
+* Structure cropping pipeline (Planned)
+* Structure image extraction (Planned)
 
 ### Molecular Recognition (Planned)
 
@@ -106,9 +114,13 @@ Dataset Analytics
 ↓
 Random Sampling
 ↓
-Annotation Pipeline (Current Stage)
+Annotation Pipeline
 ↓
-Structure Detection (Upcoming)
+YOLO Dataset Preparation
+↓
+Chemical Structure Detection Model Training (Current Stage)
+↓
+Structure Cropping
 ↓
 SMILES Generation (Upcoming)
 ↓
@@ -137,6 +149,34 @@ PATENTSTRUCTAI/
 └── requirements.txt
 
 ---
+## Current Dataset
+
+### Patent Corpus
+
+* 37 successfully processed patents
+* 1654 rendered patent pages
+* Multi-country patent collection
+  * US
+  * WO
+  * JP
+  * CN
+  * KR
+  * EP
+  * TW
+  * AU
+
+### Annotation Dataset
+
+* YOLO-format object detection dataset
+* 12 annotated chemistry pages
+* 106 chemical structure annotations
+* Includes:
+  * Markush structures
+  * Single compounds
+  * Multiple compounds
+  * Reaction schemes
+
+---
 
 ## Technology Stack
 
@@ -151,6 +191,8 @@ PATENTSTRUCTAI/
 
 * PyTorch
 * TorchVision
+* Ultralytics YOLOv8
+* OpenCV
 
 ### Cheminformatics
 
@@ -179,7 +221,7 @@ PATENTSTRUCTAI/
 
 ## Future Roadmap
 
-* YOLO-based chemical structure detection
+* Train custom YOLOv8 chemical structure detector
 * MolScribe integration
 * Molecular fingerprint indexing
 * Patent similarity ranking

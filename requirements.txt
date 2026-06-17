@@ -16,3 +16,4 @@ torch
 torchvision
 lxml
 opencv-python
+ultralytics

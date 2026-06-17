@@ -6,7 +6,7 @@
 # Python
 # --------------------------
 venv/
-__pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -38,13 +38,15 @@ data/temp/*.pdf
 # Annotation / Training Data
 # --------------------------
 # Annotation outputs
+
+# Annotation source pages
 annotations/raw_pages/
+annotations/raw_pages.zip
+# Temporary manual sorting folders
+annotations/chemistry_pages/
+annotations/non_chemistry_pages/
 
 # Training outputs
-runs/
-datasets/
-wandb/
-
 runs/
 datasets/
 wandb/
@@ -76,3 +78,18 @@ wandb/
 # --------------------------
 .DS_Store
 Thumbs.db
+
+# --------------------------
+# YOLO predictions
+# --------------------------
+predictions/
+
+# --------------------------
+# Exported datasets
+# --------------------------
+*.zip
+
+# --------------------------
+# TensorBoard
+# --------------------------
+events.out.tfevents*
