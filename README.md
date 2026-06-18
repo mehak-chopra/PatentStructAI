@@ -105,7 +105,7 @@ flowchart TD
 - YOLO format label generation
 - Automated image–label synchronization
 - Chemical structure bounding box annotations
-- Initial dataset: **42 manually annotated patent pages** containing **106 chemical structure annotations**
+- Current dataset: **42 manually annotated patent pages** containing **274 chemical structure annotations**
 
 ### 🔬 Current Detection Task
 
@@ -183,17 +183,28 @@ PATENTSTRUCTAI/
 | Multiple Compound Pages | 6 |
 | Single Compound Pages | 2 |
 | Mixed Structure Pages | Remaining |
+> Category counts represent the manually reviewed chemistry-page subset used during dataset construction.
 
 ### Annotation Dataset
 
 - 📦 YOLO-format object detection dataset
 - 🏷️ **42** manually annotated patent pages
-- 🧬 **106** chemical structure annotations
+- 🧬 **274** chemical structure annotations
 - 📐 Chemical structure bounding box annotations, including:
   - Markush structures
   - Single compounds
   - Multiple compounds / compound grids
   - Reaction schemes
+
+### Annotation Statistics
+
+| Metric | Value |
+|---|---:|
+| Annotated Pages | **42** |
+| Total Structures | **274** |
+| Average Structures / Page | **6.52** |
+| Empty Pages | **0** |
+| Most Crowded Page | **28 structures** |
 
 ---
 
@@ -203,7 +214,7 @@ PATENTSTRUCTAI/
 - 37 patents processed
 - 1,654 rendered patent pages
 - 42 annotated chemistry pages
-- 106 structure annotations
+- 274 structure annotations
 
 **Current stage:**
 - Building a custom YOLOv8 detector for chemical structure localization
