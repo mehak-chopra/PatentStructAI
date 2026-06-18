@@ -1,9 +1,11 @@
 from pathlib import Path
 import shutil
 
-RAW_IMAGES = Path(
-    "annotations/raw_pages"
-)
+
+IMAGE_FOLDERS = [
+    Path("annotations/confirmed_chemistry_pages"),
+    Path("annotations/raw_pages")
+]
 
 EXPORTED_LABELS = Path(
     "annotations/labels/train"
@@ -12,11 +14,6 @@ EXPORTED_LABELS = Path(
 YOLO_IMAGES = Path(
     "annotations/images/train"
 )
-
-YOLO_LABELS = Path(
-    "annotations/labels/train"
-)
-
 
 YOLO_IMAGES.mkdir(
     parents=True,
@@ -33,12 +30,21 @@ for label_file in EXPORTED_LABELS.glob(
         label_file.stem + ".png"
     )
 
-    image_file = (
-        RAW_IMAGES /
-        image_name
-    )
+    image_file = None
 
-    if not image_file.exists():
+    for folder in IMAGE_FOLDERS:
+
+        candidate = (
+            folder /
+            image_name
+        )
+
+        if candidate.exists():
+
+            image_file = candidate
+            break
+
+    if image_file is None:
 
         print(
             f"Missing image: "
@@ -53,7 +59,6 @@ for label_file in EXPORTED_LABELS.glob(
     )
 
     copied += 1
-
 
 print(
     f"✅ Copied "

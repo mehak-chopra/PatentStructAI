@@ -165,16 +165,64 @@ PATENTSTRUCTAI/
   * TW
   * AU
 
+### Dataset Composition
+
+| Category | Pages |
+|-----------|-------|
+| Markush Structures | 12 |
+| Reaction Schemes | 10 |
+| Multiple Compound Pages | 6 |
+| Single Compound Pages | 2 |
+| Mixed Structure Pages | Remaining |
+
 ### Annotation Dataset
 
 * YOLO-format object detection dataset
-* 12 annotated chemistry pages
-* 106 chemical structure annotations
+* 42 annotated chemistry pages
+* Chemical structure bounding box annotations
 * Includes:
   * Markush structures
   * Single compounds
-  * Multiple compounds
+  * Multiple compounds / compound grids
   * Reaction schemes
+
+---
+
+## Current Progress
+
+### Completed
+
+✅ Patent ingestion pipeline
+
+✅ Patent metadata validation
+
+✅ PDF download automation
+
+✅ Patent page rendering
+
+✅ Patent database storage
+
+✅ Dataset analytics
+
+✅ Chemistry page sampling pipeline
+
+✅ CVAT annotation workflow
+
+✅ YOLO dataset generation
+
+### In Progress
+
+🔄 Custom YOLOv8 chemical structure detector
+
+### Upcoming
+
+⏳ Structure cropping pipeline
+
+⏳ MolScribe integration
+
+⏳ Molecular fingerprint generation
+
+⏳ Similarity search engine
 
 ---
 
@@ -221,7 +269,7 @@ PATENTSTRUCTAI/
 
 ## Future Roadmap
 
-* Train custom YOLOv8 chemical structure detector
+* Complete training and evaluation of custom YOLOv8 chemical structure detector
 * MolScribe integration
 * Molecular fingerprint indexing
 * Patent similarity ranking

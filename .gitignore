@@ -37,14 +37,18 @@ data/temp/*.pdf
 # --------------------------
 # Annotation / Training Data
 # --------------------------
-# Annotation outputs
 
-# Annotation source pages
+# Annotation workflow folders
 annotations/raw_pages/
-annotations/raw_pages.zip
-# Temporary manual sorting folders
 annotations/chemistry_pages/
+annotations/chemistry_raw_pages/
+annotations/confirmed_chemistry_pages/
 annotations/non_chemistry_pages/
+
+# Annotation zip archives
+annotations/raw_pages.zip
+annotations/chemistry_raw_pages.zip
+annotations/confirmed_chemistry_pages.zip
 
 # Training outputs
 runs/
