@@ -50,10 +50,12 @@ annotations/raw_pages.zip
 annotations/chemistry_raw_pages.zip
 annotations/confirmed_chemistry_pages.zip
 
-# Training outputs
+# Experiment tracking
 runs/
-datasets/
 wandb/
+
+# YOLO cache files
+*.cache
 
 # --------------------------
 # Jupyter
@@ -84,11 +86,6 @@ wandb/
 Thumbs.db
 
 # --------------------------
-# YOLO predictions
-# --------------------------
-predictions/
-
-# --------------------------
 # Exported datasets
 # --------------------------
 *.zip
@@ -97,3 +94,12 @@ predictions/
 # TensorBoard
 # --------------------------
 events.out.tfevents*
+
+# --------------------------
+# Ultralytics / YOLO
+# --------------------------
+runs/
+*.cache
+
+# Prediction outputs
+predictions/

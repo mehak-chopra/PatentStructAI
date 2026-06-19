@@ -217,21 +217,35 @@ PATENTSTRUCTAI/
 - 274 structure annotations
 
 **Current stage:**
-- Building a custom YOLOv8 detector for chemical structure localization
-- Dataset expansion and annotation are ongoing
-- Model evaluation results will be added after training completes
+- Custom YOLOv8 chemical structure detector trained
+- Initial model evaluation completed
+- Structure cropping pipeline under development
+- Dataset expansion and iterative retraining planned
 
 ---
 
 ## 📈 Model Performance
 
-> Training is in progress. This section will be populated with evaluation metrics once the YOLOv8 detector finishes training.
+### YOLOv8 Chemical Structure Detector v1
 
 | Metric | Value |
 |---|---:|
-| mAP50 | *pending* |
-| Precision | *pending* |
-| Recall | *pending* |
+| mAP50 | **0.89** |
+| mAP50-95 | **0.68** |
+| Precision | **0.82** |
+| Recall | **0.90** |
+
+**Training Configuration**
+- Model: YOLOv8n
+- Training Images: 34
+- Validation Images: 8
+- Total Annotations: 274
+
+The detector successfully localizes:
+- Chemical structures
+- Markush structures
+- Reaction schemes
+- Multi-compound grids
 
 ---
 
@@ -250,11 +264,12 @@ PATENTSTRUCTAI/
 - Chemistry page sampling pipeline
 - CVAT annotation workflow
 - YOLO dataset generation
+- Custom YOLOv8 chemical structure detector
 
 </td><td width="33%" valign="top">
 
 ### 🔄 In Progress
-- Custom YOLOv8 chemical structure detector
+- Structure cropping pipeline
 
 </td><td width="33%" valign="top">
 
@@ -320,7 +335,7 @@ pip install -r requirements.txt
 
 ## 🗺️ Roadmap
 
-- [ ] Complete training & evaluation of the custom YOLOv8 chemical structure detector
+- [ ] Build automated structure cropping pipeline
 - [ ] MolScribe integration for Optical Chemical Structure Recognition
 - [ ] Molecular fingerprint indexing
 - [ ] Patent similarity ranking engine
