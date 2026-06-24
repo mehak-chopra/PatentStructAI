@@ -15,9 +15,9 @@ from database.patent_repository import (
     insert_failed_patent
 )
 
-
+# change this to the path to the desired patent numbers file
 PATENT_FILE = Path(
-    "data/patent_numbers.txt"
+    "data/chemistry_patent_numbers_v2.txt"
 )
 
 MAX_WORKERS = 5

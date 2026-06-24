@@ -23,7 +23,7 @@ data/extracted_images/
 data/cropped_structures/
 data/temp/*.pdf
 
-# Keep patent_numbers.txt
+# Keep patent number lists
 !data/temp/patent_numbers.txt
 
 # --------------------------
@@ -33,29 +33,42 @@ data/temp/*.pdf
 *.pth
 *.onnx
 *.ckpt
+yolov8n.pt
 
 # --------------------------
-# Annotation / Training Data
+# Annotation Workflow
 # --------------------------
 
-# Annotation workflow folders
+# V1 temporary folders
 annotations/raw_pages/
 annotations/chemistry_pages/
 annotations/chemistry_raw_pages/
 annotations/confirmed_chemistry_pages/
 annotations/non_chemistry_pages/
 
-# Annotation zip archives
+# V2 temporary folders
+annotations/chemistry_raw_pages_v2/
+annotations/confirmed_chemistry_pages_v2/
+annotations/rejected_pages_v2/
+
+# Dataset versions (generated)
+annotations/datasets/v2/
+
+# Annotation archives
 annotations/raw_pages.zip
 annotations/chemistry_raw_pages.zip
 annotations/confirmed_chemistry_pages.zip
+annotations/chemistry_raw_pages_v2.zip
+annotations/confirmed_chemistry_pages_v2.zip
 
-# Experiment tracking
+# --------------------------
+# Experiment Tracking
+# --------------------------
 runs/
 wandb/
-
-# YOLO cache files
+predictions/
 *.cache
+events.out.tfevents*
 
 # --------------------------
 # Jupyter
@@ -66,6 +79,15 @@ wandb/
 # IDE
 # --------------------------
 .vscode/
+.idea/
+
+# --------------------------
+# Testing & Analysis
+# --------------------------
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 
 # --------------------------
 # Logs
@@ -84,22 +106,9 @@ wandb/
 # --------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # --------------------------
-# Exported datasets
+# Archives
 # --------------------------
 *.zip
-
-# --------------------------
-# TensorBoard
-# --------------------------
-events.out.tfevents*
-
-# --------------------------
-# Ultralytics / YOLO
-# --------------------------
-runs/
-*.cache
-
-# Prediction outputs
-predictions/
