@@ -6,7 +6,7 @@ model = YOLO(
 )
 
 model.train(
-    data="annotations/dataset.yaml",
+    data="annotations/datasets/v1/data.yaml",
     epochs=50,
     imgsz=640,
     batch=8,
