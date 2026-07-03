@@ -1,0 +1,50 @@
+=======================================================
+PatentStructAI Evaluation Report
+=======================================================
+
+Experiment : yolov8n_v2
+Timestamp  : 2026-07-03T13:00:10.885793
+
+----------------------------------------
+Model
+----------------------------------------
+Checkpoint : models\structure_detector\experiments\yolov8n_v2\weights\best.pt
+Architecture : yolov8n.pt
+Image Size : 640
+Batch Size : 8
+Device     : cpu
+
+----------------------------------------
+Dataset
+----------------------------------------
+Dataset YAML : annotations\datasets\v2\data.yaml
+Evaluation Split : test
+Images : 48
+Instances : 271
+
+----------------------------------------
+Test Metrics
+----------------------------------------
+Precision : 0.9960
+Recall    : 0.9963
+mAP50     : 0.9947
+mAP50-95  : 0.9737
+
+----------------------------------------
+Inference Speed (ms/image)
+----------------------------------------
+Preprocess : 0.49
+Inference  : 47.45
+Postprocess: 0.89
+
+----------------------------------------
+Overall Verdict
+----------------------------------------
+★★★★★ Excellent
+Model generalizes extremely well on the held-out test dataset.
+
+----------------------------------------
+Reproducibility
+----------------------------------------
+Confidence Threshold : 0.25
+Evaluation Split     : test

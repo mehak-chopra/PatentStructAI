@@ -1,0 +1,24 @@
+{
+    "experiment": "yolov8n_v2",
+    "timestamp": "2026-07-03T13:00:10.885793",
+    "confidence_threshold": 0.25,
+    "split": "test",
+    "weights": "models\\structure_detector\\experiments\\yolov8n_v2\\weights\\best.pt",
+    "model": "yolov8n.pt",
+    "image_size": 640,
+    "batch_size": 8,
+    "device": "cpu",
+    "dataset": "annotations\\datasets\\v2\\data.yaml",
+    "test_images": 48,
+    "test_instances": 271,
+    "precision": 0.99597182228589,
+    "recall": 0.996309963099631,
+    "map50": 0.9946678966789666,
+    "map5095": 0.9737491911370946,
+    "speed_ms_per_image": {
+        "preprocess": 0.48666458557515097,
+        "inference": 47.454614577873144,
+        "loss": 0.0001520844913708667,
+        "postprocess": 0.8870291664303901
+    }
+}
