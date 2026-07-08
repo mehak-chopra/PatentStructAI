@@ -1,6 +1,73 @@
+"""
+PatentStructAI Patent Repository
+
+Contains all database operations for
+
+- Patent metadata
+- Patent pages
+- Processing status
+- Dataset statistics
+- Sampling utilities
+"""
+
 from sqlalchemy import text
+
 from database.db_connection import engine
 
+
+# =====================================================
+# Database Helpers
+# =====================================================
+
+def execute(
+    query,
+    parameters=None
+):
+
+    with engine.begin() as conn:
+
+        return conn.execute(
+            query,
+            parameters or {}
+        )
+
+
+def fetch_all(
+    query,
+    parameters=None
+):
+
+    return execute(
+        query,
+        parameters
+    ).fetchall()
+
+
+def fetch_one(
+    query,
+    parameters=None
+):
+
+    return execute(
+        query,
+        parameters
+    ).first()
+
+
+def fetch_scalar(
+    query,
+    parameters=None
+):
+
+    return execute(
+        query,
+        parameters
+    ).scalar()
+
+
+# =====================================================
+# Patent Insertion
+# =====================================================
 
 def insert_patent(
     patent_number,
@@ -8,8 +75,6 @@ def insert_patent(
     pdf_url,
     country
 ):
-    # wont create duplicates due to IGNORE,
-    # but will log if it fails for other reasons
 
     query = text("""
         INSERT IGNORE INTO patents
@@ -30,29 +95,30 @@ def insert_patent(
 
     try:
 
-        with engine.begin() as conn:
+        execute(
 
-            conn.execute(
-                query,
-                {
-                    "patent_number": patent_number,
-                    "title": title,
-                    "pdf_url": pdf_url,
-                    "country": country
-                }
-            )
+            query,
+
+            {
+                "patent_number": patent_number,
+                "title": title,
+                "pdf_url": pdf_url,
+                "country": country
+            }
+
+        )
 
         print(
             f"✅ Stored {patent_number}"
         )
 
-    except Exception as e:
+    except Exception as error:
 
         print(
             f"❌ Failed {patent_number}"
         )
 
-        print(e)
+        print(error)
 
 
 def get_pending_patents():
@@ -63,15 +129,12 @@ def get_pending_patents():
             patent_number,
             pdf_url
         FROM patents
-        WHERE pdf_downloaded = FALSE
+        WHERE
+            pdf_downloaded = FALSE
             AND pdf_url IS NOT NULL
     """)
 
-    with engine.begin() as conn:
-
-        result = conn.execute(query)
-
-        return result.fetchall()
+    return fetch_all(query)
 
 
 def mark_pdf_downloaded(
@@ -84,14 +147,15 @@ def mark_pdf_downloaded(
         WHERE id = :patent_id
     """)
 
-    with engine.begin() as conn:
+    execute(
 
-        conn.execute(
-            query,
-            {
-                "patent_id": patent_id
-            }
-        )
+        query,
+
+        {
+            "patent_id": patent_id
+        }
+
+    )
 
 
 def mark_images_extracted(
@@ -104,14 +168,15 @@ def mark_images_extracted(
         WHERE id = :patent_id
     """)
 
-    with engine.begin() as conn:
+    execute(
 
-        conn.execute(
-            query,
-            {
-                "patent_id": patent_id
-            }
-        )
+        query,
+
+        {
+            "patent_id": patent_id
+        }
+
+    )
 
 
 def insert_patent_page(
@@ -135,16 +200,17 @@ def insert_patent_page(
         )
     """)
 
-    with engine.begin() as conn:
+    execute(
 
-        conn.execute(
-            query,
-            {
-                "patent_id": patent_id,
-                "page_number": page_number,
-                "image_path": image_path
-            }
-        )
+        query,
+
+        {
+            "patent_id": patent_id,
+            "page_number": page_number,
+            "image_path": image_path
+        }
+
+    )
 
 
 def get_patents_for_processing():
@@ -155,16 +221,13 @@ def get_patents_for_processing():
             patent_number,
             pdf_url
         FROM patents
-        WHERE images_extracted = FALSE
+        WHERE
+            images_extracted = FALSE
             AND pdf_available = TRUE
             AND pdf_url IS NOT NULL
     """)
 
-    with engine.begin() as conn:
-
-        result = conn.execute(query)
-
-        return result.fetchall()
+    return fetch_all(query)
 
 
 def get_patent_pages(
@@ -181,17 +244,16 @@ def get_patent_pages(
         ORDER BY page_number
     """)
 
-    with engine.begin() as conn:
+    return fetch_all(
 
-        result = conn.execute(
-            query,
-            {
-                "patent_id": patent_id
-            }
-        )
+        query,
 
-        return result.fetchall()
-    
+        {
+            "patent_id": patent_id
+        }
+
+    )
+
 def insert_failed_patent(
     patent_number,
     error_message
@@ -210,18 +272,16 @@ def insert_failed_patent(
         )
     """)
 
-    with engine.begin() as conn:
+    execute(
 
-        conn.execute(
-            query,
-            {
-                "patent_number":
-                    patent_number,
+        query,
 
-                "error_message":
-                    error_message
-            }
-        )
+        {
+            "patent_number": patent_number,
+            "error_message": error_message
+        }
+
+    )
 
 
 def get_failed_patents():
@@ -234,12 +294,9 @@ def get_failed_patents():
         FROM failed_patents
     """)
 
-    with engine.begin() as conn:
+    return fetch_all(query)
 
-        result = conn.execute(query)
 
-        return result.fetchall()
-    
 def get_patent_count():
 
     query = text("""
@@ -321,6 +378,7 @@ def get_average_pages_per_patent():
             query
         ).scalar()
     
+
 def mark_pdf_unavailable(
     patent_id
 ):
@@ -331,14 +389,15 @@ def mark_pdf_unavailable(
         WHERE id = :patent_id
     """)
 
-    with engine.begin() as conn:
+    execute(
 
-        conn.execute(
-            query,
-            {
-                "patent_id": patent_id
-            }
-        )
+        query,
+
+        {
+            "patent_id": patent_id
+        }
+
+    )
 
 def get_no_pdf_count():
 
@@ -383,6 +442,7 @@ def get_processed_patent_count():
             query
         ).scalar()
 
+
 def get_random_pages(
     limit
 ):
@@ -395,17 +455,17 @@ def get_random_pages(
         LIMIT :limit
     """)
 
-    with engine.begin() as conn:
+    return fetch_all(
 
-        result = conn.execute(
-            query,
-            {
-                "limit": limit
-            }
-        )
+        query,
 
-        return result.fetchall()
-    
+        {
+            "limit": limit
+        }
+
+    )
+
+
 def get_all_patent_pages():
 
     query = text("""
@@ -415,34 +475,4 @@ def get_all_patent_pages():
         FROM patent_pages
     """)
 
-    with engine.begin() as conn:
-
-        result = conn.execute(query)
-
-        return result.fetchall()
-
-
-def update_page_triage(
-    page_id,
-    chemistry_score,
-    contains_chemistry
-):
-
-    query = text("""
-        UPDATE patent_pages
-        SET
-            chemistry_score = :chemistry_score,
-            contains_chemistry = :contains_chemistry
-        WHERE id = :page_id
-    """)
-
-    with engine.begin() as conn:
-
-        conn.execute(
-            query,
-            {
-                "page_id": page_id,
-                "chemistry_score": chemistry_score,
-                "contains_chemistry": contains_chemistry
-            }
-        )
+    return fetch_all(query)
