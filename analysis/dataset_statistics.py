@@ -1,3 +1,29 @@
+"""
+PatentStructAI Dataset Statistics
+
+Generate comprehensive statistics for a versioned
+YOLO object detection dataset.
+
+Features
+--------
+- Image and label counts
+- Train / Validation / Test split statistics
+- Dataset size
+- Bounding box statistics
+- Class distribution
+- Most / Least annotated pages
+- Dataset integrity verification
+
+Example
+-------
+
+python -m analysis.dataset_statistics \
+    --version v1
+
+python -m analysis.dataset_statistics \
+    --version v2
+"""
+
 from pathlib import Path
 from collections import Counter
 import argparse
@@ -5,52 +31,8 @@ import sys
 import yaml
 
 # =====================================================
-# Usage
-#
-# python -m analysis.dataset_statistics --version v2
-# python -m analysis.dataset_statistics --version v3
-# =====================================================
-
-
-# =====================================================
-# Command Line Arguments
-# =====================================================
-
-parser = argparse.ArgumentParser(
-    description=(
-        "Generate statistics for a versioned "
-        "YOLO dataset."
-    )
-)
-
-parser.add_argument(
-    "--version",
-    required=True,
-    help="Dataset version (v1, v2, v3 ...)"
-)
-
-args = parser.parse_args()
-
-DATASET_VERSION = args.version
-
-
-# =====================================================
 # Dataset Paths
 # =====================================================
-
-DATASET_ROOT = Path(
-    f"annotations/datasets/{DATASET_VERSION}"
-)
-
-IMAGE_ROOT = (
-    DATASET_ROOT /
-    "images"
-)
-
-LABEL_ROOT = (
-    DATASET_ROOT /
-    "labels"
-)
 
 SPLITS = [
     "train",
@@ -58,54 +40,105 @@ SPLITS = [
     "test"
 ]
 
+# =====================================================
+# Dataset Paths
+# =====================================================
+
+def dataset_paths(version):
+    dataset_root = (
+        Path("annotations")
+        / "datasets"
+        / version
+    )
+
+    return {
+        "root":
+            dataset_root,
+
+        "images":
+            dataset_root /
+            "images",
+
+        "labels":
+            dataset_root /
+            "labels",
+
+        "yaml":
+            dataset_root /
+            "data.yaml"
+    }
 
 # =====================================================
 # Helper Functions
 # =====================================================
 
 def get_image_files(
+    image_root,
     split
 ):
 
     return sorted(
         (
-            IMAGE_ROOT /
+            image_root /
             split
-        ).glob("*.png")
+        ).glob(
+            "*.png"
+        )
     )
 
 
 def get_label_files(
+    label_root,
     split
 ):
 
     return sorted(
         (
-            LABEL_ROOT /
+            label_root /
             split
         ).glob("*.txt")
     )
 
 
-def count_split_files():
+def count_split_files(
+    image_root,
+    label_root
+):
 
     image_counts = {}
-
     label_counts = {}
+    image_files = {}
+    label_files = {}
 
     for split in SPLITS:
 
+        images = get_image_files(
+            image_root,
+            split
+        )
+
+        labels = get_label_files(
+            label_root,
+            split
+        )
+
+        image_files[split] = images
+
+        label_files[split] = labels
+
         image_counts[split] = len(
-            get_image_files(split)
+            images
         )
 
         label_counts[split] = len(
-            get_label_files(split)
+            labels
         )
 
     return (
         image_counts,
-        label_counts
+        label_counts,
+        image_files,
+        label_files
     )
 
 
@@ -131,21 +164,27 @@ def total_counts(
 # Annotation Statistics
 # =====================================================
 
-def get_annotation_statistics():
+def get_annotation_statistics(
+    label_files
+):
 
     class_counter = Counter()
-
     total_boxes = 0
-
     empty_labels = 0
+    annotation_counts = []
+
+    most_annotations = {
+        "page": None,
+        "count": 0
+    }
+
+    least_annotations = {
+        "page": None,
+        "count": float("inf")
+    }
 
     for split in SPLITS:
-
-        label_files = get_label_files(
-            split
-        )
-
-        for label_file in label_files:
+        for label_file in label_files[split]:
 
             lines = (
                 label_file
@@ -155,32 +194,48 @@ def get_annotation_statistics():
                 .splitlines()
             )
 
-            if not lines:
+            annotation_count = len(lines)
 
+            annotation_counts.append(
+                annotation_count
+            )
+
+            if annotation_count == 0:
                 empty_labels += 1
-                continue
+
+            if annotation_count > most_annotations["count"]:
+                most_annotations = {
+                    "page": label_file.name,
+                    "count": annotation_count
+                }
+
+            if annotation_count < least_annotations["count"]:
+                least_annotations = {
+                    "page": label_file.name,
+                    "count": annotation_count
+                }
 
             for line in lines:
-
                 parts = line.split()
-
                 if not parts:
                     continue
 
-                class_id = int(
-                    parts[0]
-                )
-
                 class_counter[
-                    class_id
+                    int(parts[0])
                 ] += 1
 
                 total_boxes += 1
 
+    if least_annotations["count"] == float("inf"):
+        least_annotations["count"] = 0
+
     return (
         class_counter,
         total_boxes,
-        empty_labels
+        empty_labels,
+        annotation_counts,
+        most_annotations,
+        least_annotations
     )
 
 
@@ -199,36 +254,92 @@ def average_boxes_per_image(
     )
 
 
+def dataset_size_mb(
+    image_files
+):
+
+    total = 0
+
+    for split in SPLITS:
+        for image in image_files[split]:
+            total += image.stat().st_size
+    return total / (1024 * 1024)
+
+
+def median_annotations(
+    annotation_counts
+):
+
+    if not annotation_counts:
+        return 0
+
+    annotation_counts = sorted(
+        annotation_counts
+    )
+
+    n = len(annotation_counts)
+
+    middle = n // 2
+
+    if n % 2 == 0:
+        return (
+            annotation_counts[middle - 1] +
+            annotation_counts[middle]
+        ) / 2
+
+    return annotation_counts[middle]
+
+
+def max_annotations(
+    annotation_counts
+):
+
+    if not annotation_counts:
+        return 0
+
+    return max(
+        annotation_counts
+    )
+
+
+def min_annotations(
+    annotation_counts
+):
+
+    if not annotation_counts:
+        return 0
+
+    return min(
+        annotation_counts
+    )
+
+
 # =====================================================
 # Dataset Integrity
 # =====================================================
 
-def dataset_integrity_check():
+def dataset_integrity_check(
+    image_files,
+    label_files
+):
 
     missing_images = []
-
     missing_labels = []
 
     for split in SPLITS:
 
         images = {
             image.stem
-            for image in get_image_files(
-                split
-            )
+            for image in image_files[split]
         }
 
         labels = {
             label.stem
-            for label in get_label_files(
-                split
-            )
+            for label in label_files[split]
         }
 
         for image in sorted(images):
-
             if image not in labels:
-
                 missing_labels.append(
                     (
                         split,
@@ -237,9 +348,7 @@ def dataset_integrity_check():
                 )
 
         for label in sorted(labels):
-
             if label not in images:
-
                 missing_images.append(
                     (
                         split,
@@ -252,15 +361,12 @@ def dataset_integrity_check():
         missing_labels
     )
 
-def load_class_names():
 
-    yaml_file = (
-        DATASET_ROOT /
-        "data.yaml"
-    )
+def load_class_names(
+    yaml_file
+):
 
     if not yaml_file.exists():
-
         return {}
 
     data = yaml.safe_load(
@@ -276,9 +382,11 @@ def load_class_names():
 
     return {
         int(class_id): class_name
-        for class_id, class_name
+        for class_id,
+        class_name
         in names.items()
     }
+
 
 def percentage(
     value,
@@ -297,35 +405,59 @@ def percentage(
 # Report
 # =====================================================
 
-def print_report():
+def print_report(
+    dataset_version
+):
 
-    image_counts, label_counts = (
-        count_split_files()
+    paths = dataset_paths(
+        dataset_version
+    )
+
+    image_counts, label_counts, image_files, label_files = (
+
+        count_split_files(
+            paths["images"],
+            paths["labels"]
+        )
     )
 
     total_images, total_labels = (
         total_counts(
             image_counts,
-            label_counts
+        label_counts
         )
     )
 
     (
         class_counter,
         total_boxes,
-        empty_labels
-    ) = get_annotation_statistics()
+        empty_labels,
+        annotation_counts,
+        most_annotations,
+        least_annotations
+    ) = get_annotation_statistics(
+        label_files
+    )
 
     (
         missing_images,
         missing_labels
-    ) = dataset_integrity_check()
+    ) = dataset_integrity_check(
+        image_files,
+        label_files
+    )
 
-    average_boxes = (
-        average_boxes_per_image(
-            total_boxes,
-            total_images
-        )
+    average_boxes = average_boxes_per_image(
+        total_boxes,
+        total_images
+    )
+
+    dataset_size = dataset_size_mb(
+        image_files
+    )
+
+    class_names = load_class_names(
+        paths["yaml"]
     )
 
     print()
@@ -346,7 +478,7 @@ def print_report():
     print()
 
     print(
-        f"Dataset Version   : {DATASET_VERSION}"
+        f"Dataset Version   : {dataset_version}"
     )
 
     print()
@@ -380,15 +512,9 @@ def print_report():
         f"{total_images}"
     )
 
-    dataset_size = sum(
-        image.stat().st_size
-        for split in SPLITS
-        for image in get_image_files(split)
-    )
-
     print(
         f"Dataset Size      : "
-        f"{dataset_size / (1024 * 1024):.2f} MB"
+        f"{dataset_size:.2f} MB"
     )
 
     print()
@@ -422,12 +548,10 @@ def print_report():
     print()
 
     print("-" * 40)
-    print("Annotation Statistics")
+    print("Chemical Structure Annotation Statistics")
     print("-" * 40)
 
     if class_counter:
-
-        class_names = load_class_names()
 
         for class_id in sorted(
             class_counter
@@ -456,6 +580,41 @@ def print_report():
     print(
         f"Average Boxes/Image  : "
         f"{average_boxes:.2f}"
+    )
+
+    print(
+        f"Median Boxes/Image   : "
+        f"{median_annotations(annotation_counts):.2f}"
+    )
+
+    print(
+        f"Maximum Boxes/Image  : "
+        f"{max_annotations(annotation_counts)}"
+    )
+
+    print(
+        f"Minimum Boxes/Image  : "
+        f"{min_annotations(annotation_counts)}"
+    )
+
+    print(
+        f"Most Annotated Page  : "
+        f"{most_annotations['page']}"
+    )
+
+    print(
+        f"Boxes On That Page   : "
+        f"{most_annotations['count']}"
+    )
+
+    print(
+        f"Least Annotated Page : "
+        f"{least_annotations['page']}"
+    )
+
+    print(
+        f"Boxes On That Page   : "
+        f"{least_annotations['count']}"
     )
 
     print(
@@ -537,29 +696,51 @@ def print_report():
     print("-" * 40)
 
     print(
-        DATASET_ROOT.as_posix()
+        paths["root"].as_posix()
     )
 
     print()
 
 
-# =====================================================
-# Main
-# =====================================================
-
 def main():
 
-    if not DATASET_ROOT.exists():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate statistics for a "
+            "versioned YOLO dataset."
+        )
+    )
+
+    parser.add_argument(
+        "--version",
+        required=True,
+        help=(
+            "Dataset version "
+            "(v1, v2, v3...)"
+        )
+    )
+
+    args = parser.parse_args()
+    paths = dataset_paths(
+        args.version
+    )
+
+    if not paths["root"].exists():
+        print()
 
         print(
-            f"Dataset not found: "
-            f"{DATASET_ROOT}"
+            "Dataset not found."
+        )
+
+        print(
+            paths["root"]
         )
 
         sys.exit(1)
 
-    print_report()
-
+    print_report(
+        args.version
+    )
 
 if __name__ == "__main__":
 
