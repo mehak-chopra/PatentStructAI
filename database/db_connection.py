@@ -1,43 +1,140 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
-from urllib.parse import quote_plus
+"""
+PatentStructAI Database Connection
+
+Provides:
+
+- SQLAlchemy engine
+- Session factory
+- Database session context manager
+- Database connection test
+"""
+
 from contextlib import contextmanager
+from urllib.parse import quote_plus
 import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import (
+    Session,
+    sessionmaker
+)
 
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
+# =====================================================
+# Environment Variables
+# =====================================================
 
-encoded_password = quote_plus(
-    DB_PASSWORD
+DB_HOST = os.getenv(
+    "DB_HOST"
 )
 
+DB_PORT = os.getenv(
+    "DB_PORT"
+)
+
+DB_USER = os.getenv(
+    "DB_USER"
+)
+
+DB_PASSWORD = os.getenv(
+    "DB_PASSWORD"
+)
+
+DB_NAME = os.getenv(
+    "DB_NAME"
+)
+
+required = {
+
+    "DB_HOST":
+        DB_HOST,
+
+    "DB_PORT":
+        DB_PORT,
+
+    "DB_USER":
+        DB_USER,
+
+    "DB_PASSWORD":
+        DB_PASSWORD,
+
+    "DB_NAME":
+        DB_NAME
+
+}
+
+missing = [
+
+    key
+
+    for key, value in required.items()
+
+    if not value
+
+]
+
+if missing:
+
+    raise RuntimeError(
+
+        "Missing database environment variables:\n"
+
+        + "\n".join(missing)
+
+    )
+
+# =====================================================
+# Database Configuration
+# =====================================================
+
 DATABASE_URL = (
-    f"mysql+pymysql://"
-    f"{DB_USER}:{encoded_password}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+    "mysql+pymysql://"
+
+    f"{DB_USER}:"
+
+    f"{quote_plus(DB_PASSWORD)}"
+
+    f"@{DB_HOST}:{DB_PORT}"
+
+    f"/{DB_NAME}"
+
 )
 
 engine = create_engine(
+
     DATABASE_URL,
-    pool_pre_ping=True
+
+    pool_pre_ping=True,
+
+    pool_recycle=3600,
+
+    future=True
+
 )
 
 SessionLocal = sessionmaker(
-    autocommit=False,
+
+    bind=engine,
+
     autoflush=False,
-    bind=engine
+
+    autocommit=False,
+
+    future=True
+
 )
+
+# =====================================================
+# Database Session
+# =====================================================
 
 @contextmanager
 def get_db():
 
-    db = SessionLocal()
+    db: Session = SessionLocal()
 
     try:
 
@@ -55,6 +152,9 @@ def get_db():
 
         db.close()
 
+# =====================================================
+# Connection Test
+# =====================================================
 
 def test_connection():
 
@@ -62,30 +162,42 @@ def test_connection():
 
         with engine.connect() as connection:
 
-            result = connection.execute(
+            connection.execute(
+
                 text("SELECT 1")
-            )
 
-            print(
-                "✅ Database Connected"
-            )
-
-            for row in result:
-
-                print(
-                    "Result:",
-                    row
-                )
-
-    except Exception as e:
+            ).scalar()
 
         print(
-            "❌ Connection Failed"
+
+            "Database connection successful."
+
         )
 
-        print(e)
+    except Exception as error:
+
+        print(
+
+            "Database connection failed."
+
+        )
+
+        print(
+
+            error
+
+        )
+
+
+# =====================================================
+# Main
+# =====================================================
+
+def main():
+
+    test_connection()
 
 
 if __name__ == "__main__":
 
-    test_connection()
+    main()
