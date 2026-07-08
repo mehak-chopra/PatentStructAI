@@ -1,9 +1,54 @@
+"""
+PatentStructAI Review Database
+
+Database operations for the annotation
+and review workflow.
+
+Handles
+
+- reviewed pages
+- dataset versions
+- review statistics
+"""
+
 from sqlalchemy import text
 
 from database.db_connection import (
     get_db
 )
 
+
+# =====================================================
+# Database Helpers
+# =====================================================
+
+def execute(
+    query,
+    parameters=None
+):
+
+    with get_db() as db:
+
+        return db.execute(
+            query,
+            parameters or {}
+        )
+
+
+def fetch_all(
+    query,
+    parameters=None
+):
+
+    return execute(
+        query,
+        parameters
+    ).fetchall()
+
+
+# =====================================================
+# Reviewed Pages
+# =====================================================
 
 def insert_reviewed_page(
     filename,
@@ -14,8 +59,7 @@ def insert_reviewed_page(
     patent_number=None
 ):
 
-    query = text(
-        """
+    query = text("""
         INSERT IGNORE INTO reviewed_pages
         (
             filename,
@@ -34,116 +78,117 @@ def insert_reviewed_page(
             :patent_number,
             :dataset_version
         )
-        """
+    """)
+
+    execute(
+
+        query,
+
+        {
+            "filename": filename,
+            "status": status,
+            "category": category,
+            "notes": notes,
+            "patent_number": patent_number,
+            "dataset_version": dataset_version
+        }
+
     )
-
-    with get_db() as db:
-
-        db.execute(
-            query,
-            {
-                "filename": filename,
-                "status": status,
-                "category": category,
-                "notes": notes,
-                "patent_number": patent_number,
-                "dataset_version": dataset_version
-            }
-        )
 
 
 def get_reviewed_pages():
 
-    with get_db() as db:
+    rows = fetch_all(
 
-        rows = db.execute(
-            text(
-                """
-                SELECT filename
-                FROM reviewed_pages
-                """
-            )
-        )
+        text("""
+            SELECT
+                filename
+            FROM reviewed_pages
+        """)
 
-        filenames = {
-            row[0]
-            for row in rows
-        }
+    )
 
-    return filenames
+    return {
+
+        row[0]
+
+        for row in rows
+
+    }
 
 
 def get_reviewed_pages_by_version(
     dataset_version
 ):
 
-    with get_db() as db:
+    rows = fetch_all(
 
-        rows = db.execute(
-            text(
-                """
-                SELECT filename
-                FROM reviewed_pages
-                WHERE dataset_version = :dataset_version
-                """
-            ),
-            {
-                "dataset_version": dataset_version
-            }
-        )
+        text("""
+            SELECT
+                filename
+            FROM reviewed_pages
+            WHERE dataset_version = :dataset_version
+        """),
 
-        filenames = {
-            row[0]
-            for row in rows
+        {
+            "dataset_version": dataset_version
         }
 
-    return filenames
+    )
+
+    return {
+
+        row[0]
+
+        for row in rows
+
+    }
 
 
-def get_review_statistics():
+def get_review_statistics_by_version():
 
-    with get_db() as db:
+    query = text("""
+        SELECT
+            dataset_version,
+            status,
+            COUNT(*) AS total
+        FROM reviewed_pages
+        GROUP BY
+            dataset_version,
+            status
+        ORDER BY
+            dataset_version,
+            status
+    """)
 
-        rows = db.execute(
-            text(
-                """
-                SELECT
-                    dataset_version,
-                    status,
-                    COUNT(*) AS total
-                FROM reviewed_pages
-                GROUP BY
-                    dataset_version,
-                    status
-                ORDER BY
-                    dataset_version,
-                    status
-                """
-            )
-        )
+    return fetch_all(query)
 
-        statistics = rows.fetchall()
-
-    return statistics
 
 def delete_reviewed_pages(
     filenames
 ):
 
-    query = text(
-        """
+    query = text("""
         DELETE FROM reviewed_pages
         WHERE filename = :filename
-        """
-    )
+    """)
+
+    parameters = [
+
+        {
+            "filename": filename
+        }
+
+        for filename in filenames
+
+    ]
 
     with get_db() as db:
 
-        for filename in filenames:
+        db.execute(
 
-            db.execute(
-                query,
-                {
-                    "filename": filename
-                }
-            )
+            query,
+
+            parameters
+
+        )
