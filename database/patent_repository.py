@@ -1,478 +1,568 @@
 """
-PatentStructAI Patent Repository
+Patent repository for PatentStructAI.
 
-Contains all database operations for
+Responsible for all operations involving:
 
-- Patent metadata
-- Patent pages
-- Processing status
-- Dataset statistics
-- Sampling utilities
+- patents
+- failed_patents
+
+This repository intentionally does NOT manage:
+
+- patent_pages
+- structures
+
+Those are handled by their own repositories.
 """
+
+from __future__ import annotations
 
 from sqlalchemy import text
 
-from database.db_connection import engine
+from database.base_repository import BaseRepository
+from database.models import PatentRecord
 
 
 # =====================================================
-# Database Helpers
+# Patent Repository
 # =====================================================
 
-def execute(
-    query,
-    parameters=None
-):
+class PatentRepository(BaseRepository):
+    """
+    Repository responsible for all operations on the
+    patents and failed_patents tables.
+    """
 
-    with engine.begin() as conn:
+    TABLE_NAME = "patents"
 
-        return conn.execute(
-            query,
-            parameters or {}
-        )
+    # =====================================================
+    # Patent Insertion
+    # =====================================================
+
+    @classmethod
+    def save(
+        cls,
+        patent: PatentRecord,
+    ) -> None:
+        """
+        Insert a patent if it does not already exist.
+        """
+
+        with cls.session() as db:
+
+            db.execute(
+
+                text(
+                    """
+                    INSERT IGNORE INTO patents
+                    (
+                        patent_number,
+                        title,
+                        pdf_url,
+                        country
+                    )
+                    VALUES
+                    (
+                        :patent_number,
+                        :title,
+                        :pdf_url,
+                        :country
+                    )
+                    """
+                ),
+
+                {
+                    "patent_number": patent.patent_number,
+                    "title": patent.title,
+                    "pdf_url": patent.pdf_url,
+                    "country": patent.country,
+                },
+
+            )
+
+    @classmethod
+    def pending_downloads(cls):
+        """
+        Return patents whose PDFs have not yet been downloaded.
+        """
+
+        with cls.session() as db:
+
+            result = db.execute(
+
+                text(
+                    """
+                    SELECT
+                        *
+                    FROM patents
+                    WHERE
+                        pdf_downloaded = FALSE
+                        AND pdf_url IS NOT NULL
+                    """
+                )
+
+            )
+
+            return result.mappings().all()
+
+    @classmethod
+    def pending_processing(cls):
+        """
+        Return patents ready for page extraction.
+        """
+
+        with cls.session() as db:
+
+            result = db.execute(
+
+                text(
+                    """
+                    SELECT *
+                    FROM patents
+                    WHERE
+                        images_extracted = FALSE
+                        AND pdf_available = TRUE
+                        AND pdf_url IS NOT NULL
+                    """
+                )
+
+            )
+
+            return result.mappings().all()
+
+    # ------------------------------------------------------------
+    # Status Updates
+    # ------------------------------------------------------------
+
+    @classmethod
+    def mark_downloaded(
+        cls,
+        patent_id,
+        local_pdf_path,
+        file_size,
+        download_duration,
+    ):
+
+        with cls.session() as db:
+            db.execute(
+                text(
+                    """
+                    UPDATE patents
+                    SET
+                        pdf_downloaded = TRUE,
+                        local_pdf_path = :local_pdf_path,
+                        file_size = :file_size,
+                        download_at = NOW(),
+                        download_duration = :download_duration
+                    WHERE
+                        id = :patent_id
+                    """
+                ),
+
+                {
+                    "patent_id": patent_id,
+                    "local_pdf_path": local_pdf_path,
+                    "file_size": file_size,
+                    "download_duration": download_duration,
+                }
+            )
 
 
-def fetch_all(
-    query,
-    parameters=None
-):
+    @classmethod
+    def mark_images_extracted(
+        cls,
+        patent_id: int,
+    ) -> None:
+        """
+        Mark rendered page extraction as complete.
+        """
 
-    return execute(
-        query,
-        parameters
-    ).fetchall()
+        with cls.session() as db:
 
+            db.execute(
 
-def fetch_one(
-    query,
-    parameters=None
-):
+                text(
+                    """
+                    UPDATE patents
+                    SET images_extracted = TRUE
+                    WHERE id = :patent_id
+                    """
+                ),
 
-    return execute(
-        query,
-        parameters
-    ).first()
+                {
+                    "patent_id": patent_id,
+                },
 
-
-def fetch_scalar(
-    query,
-    parameters=None
-):
-
-    return execute(
-        query,
-        parameters
-    ).scalar()
+            )
 
 
-# =====================================================
-# Patent Insertion
-# =====================================================
+    @classmethod
+    def mark_structures_extracted(
+        cls,
+        patent_id: int,
+    ) -> None:
+        """
+        Mark chemistry extraction as complete.
+        """
 
-def insert_patent(
-    patent_number,
-    title,
-    pdf_url,
-    country
-):
+        with cls.session() as db:
 
-    query = text("""
-        INSERT IGNORE INTO patents
-        (
+            db.execute(
+
+                text(
+                    """
+                    UPDATE patents
+                    SET structures_extracted = TRUE
+                    WHERE id = :patent_id
+                    """
+                ),
+
+                {
+                    "patent_id": patent_id,
+                },
+
+            )
+
+
+    @classmethod
+    def mark_processed(
+        cls,
+        patent_id,
+    ):
+
+        with cls.session() as db:
+            db.execute(
+                text(
+                    """
+                    UPDATE patents
+                    SET
+                        processed = TRUE,
+                        processed_at = NOW()
+                    WHERE
+                        id = :patent_id
+                    """
+                ),
+
+                {
+                    "patent_id": patent_id,
+                }
+            )
+
+
+    @classmethod
+    def mark_pdf_unavailable(
+        cls,
+        patent_id: int,
+    ) -> None:
+        """
+        Mark patents whose PDF is unavailable.
+        """
+
+        with cls.session() as db:
+
+            db.execute(
+
+                text(
+                    """
+                    UPDATE patents
+                    SET pdf_available = FALSE
+                    WHERE id = :patent_id
+                    """
+                ),
+
+                {
+                    "patent_id": patent_id,
+                },
+
+            )
+
+    # ------------------------------------------------------------
+    # Failed Patents
+    # ------------------------------------------------------------
+
+    @classmethod
+    def save_failure(
+        cls,
+        patent_number: str,
+        error_message: str,
+        failure_stage: str = "unknown",
+    ) -> None:
+        """
+        Store a failed patent import.
+        """
+
+        with cls.session() as db:
+
+            db.execute(
+
+                text(
+                    """
+                    INSERT IGNORE INTO failed_patents
+                    (
+                        patent_number,
+                        failure_stage,
+                        error_message,
+                        retry_count
+                    )
+                    VALUES
+                    (
+                        :patent_number,
+                        :failure_stage,
+                        :error_message,
+                        0
+                    )
+                    """
+                ),
+
+                {
+                    "patent_number": patent_number,
+                    "error_message": error_message,
+                    "failure_stage": failure_stage,
+                },
+
+            )
+
+
+    @classmethod
+    def failed_patents(cls):
+        """
+        Return every failed patent.
+        """
+
+        with cls.session() as db:
+
+            result = db.execute(
+
+                text(
+                    """
+                    SELECT *
+                    FROM failed_patents
+                    ORDER BY created_at DESC
+                    """
+                )
+
+            )
+
+            return result.mappings().all()
+
+    # ------------------------------------------------------------
+    # Statistics
+    # ------------------------------------------------------------
+
+    @classmethod
+    def processed_count(cls) -> int:
+
+        with cls.session() as db:
+
+            return db.execute(
+
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM patents
+                    WHERE processed = TRUE
+                    """
+                )
+
+            ).scalar_one()
+
+
+    @classmethod
+    def unavailable_pdf_count(cls) -> int:
+
+        with cls.session() as db:
+
+            return db.execute(
+
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM patents
+                    WHERE pdf_available = FALSE
+                    """
+                )
+
+            ).scalar_one()
+
+
+    @classmethod
+    def failed_count(cls) -> int:
+
+        with cls.session() as db:
+
+            return db.execute(
+
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM failed_patents
+                    """
+                )
+
+            ).scalar_one()
+
+
+    @classmethod
+    def country_statistics(cls):
+
+        with cls.session() as db:
+
+            result = db.execute(
+
+                text(
+                    """
+                    SELECT
+                        country,
+                        COUNT(*) AS total
+                    FROM patents
+                    GROUP BY country
+                    ORDER BY total DESC
+                    """
+                )
+
+            )
+
+            return result.mappings().all()
+
+    # ------------------------------------------------------------
+    # Lookup
+    # ------------------------------------------------------------
+
+    @classmethod
+    def get_by_number(
+        cls,
+        patent_number: str,
+    ):
+
+        return cls.fetch_one(
+            "patent_number",
             patent_number,
-            title,
-            pdf_url,
-            country
-        )
-        VALUES
-        (
-            :patent_number,
-            :title,
-            :pdf_url,
-            :country
-        )
-    """)
-
-    try:
-
-        execute(
-
-            query,
-
-            {
-                "patent_number": patent_number,
-                "title": title,
-                "pdf_url": pdf_url,
-                "country": country
-            }
-
         )
 
-        print(
-            f"✅ Stored {patent_number}"
-        )
 
-    except Exception as error:
+    @classmethod
+    def exists(
+        cls,
+        patent_number: str,
+    ) -> bool:
 
-        print(
-            f"❌ Failed {patent_number}"
-        )
-
-        print(error)
-
-
-def get_pending_patents():
-
-    query = text("""
-        SELECT
-            id,
+        return super().exists(
+            "patent_number",
             patent_number,
-            pdf_url
-        FROM patents
-        WHERE
-            pdf_downloaded = FALSE
-            AND pdf_url IS NOT NULL
-    """)
-
-    return fetch_all(query)
-
-
-def mark_pdf_downloaded(
-    patent_id
-):
-
-    query = text("""
-        UPDATE patents
-        SET pdf_downloaded = TRUE
-        WHERE id = :patent_id
-    """)
-
-    execute(
-
-        query,
-
-        {
-            "patent_id": patent_id
-        }
-
-    )
-
-
-def mark_images_extracted(
-    patent_id
-):
-
-    query = text("""
-        UPDATE patents
-        SET images_extracted = TRUE
-        WHERE id = :patent_id
-    """)
-
-    execute(
-
-        query,
-
-        {
-            "patent_id": patent_id
-        }
-
-    )
-
-
-def insert_patent_page(
-    patent_id,
-    page_number,
-    image_path
-):
-
-    query = text("""
-        INSERT IGNORE INTO patent_pages
-        (
-            patent_id,
-            page_number,
-            image_path
         )
-        VALUES
-        (
-            :patent_id,
-            :page_number,
-            :image_path
-        )
-    """)
-
-    execute(
-
-        query,
-
-        {
-            "patent_id": patent_id,
-            "page_number": page_number,
-            "image_path": image_path
-        }
-
-    )
-
-
-def get_patents_for_processing():
-
-    query = text("""
-        SELECT
-            id,
-            patent_number,
-            pdf_url
-        FROM patents
-        WHERE
-            images_extracted = FALSE
-            AND pdf_available = TRUE
-            AND pdf_url IS NOT NULL
-    """)
-
-    return fetch_all(query)
-
-
-def get_patent_pages(
-    patent_id
-):
-
-    query = text("""
-        SELECT
-            id,
-            page_number,
-            image_path
-        FROM patent_pages
-        WHERE patent_id = :patent_id
-        ORDER BY page_number
-    """)
-
-    return fetch_all(
-
-        query,
-
-        {
-            "patent_id": patent_id
-        }
-
-    )
-
-def insert_failed_patent(
-    patent_number,
-    error_message
-):
-
-    query = text("""
-        INSERT IGNORE INTO failed_patents
-        (
-            patent_number,
-            error_message
-        )
-        VALUES
-        (
-            :patent_number,
-            :error_message
-        )
-    """)
-
-    execute(
-
-        query,
-
-        {
-            "patent_number": patent_number,
-            "error_message": error_message
-        }
-
-    )
-
-
-def get_failed_patents():
-
-    query = text("""
-        SELECT
-            patent_number,
-            error_message,
-            failed_at
-        FROM failed_patents
-    """)
-
-    return fetch_all(query)
-
-
-def get_patent_count():
-
-    query = text("""
-        SELECT COUNT(*)
-        FROM patents
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
-
-
-def get_page_count():
-
-    query = text("""
-        SELECT COUNT(*)
-        FROM patent_pages
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
-
-
-def get_failed_patent_count():
-
-    query = text("""
-        SELECT COUNT(*)
-        FROM failed_patents
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
-
-
-def get_country_stats():
-
-    query = text("""
-        SELECT
-            country,
-            COUNT(*) AS total
-        FROM patents
-        GROUP BY country
-        ORDER BY total DESC
-    """)
-
-    with engine.begin() as conn:
-
-        result = conn.execute(query)
-
-        return result.fetchall()
-
-
-def get_average_pages_per_patent():
-
-    query = text("""
-        SELECT
-            AVG(page_count)
-        FROM
-        (
-            SELECT
-                patent_id,
-                COUNT(*) AS page_count
-            FROM patent_pages
-            GROUP BY patent_id
-        ) t
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
     
 
-def mark_pdf_unavailable(
-    patent_id
-):
+    @classmethod
+    def pending_metadata(cls):
 
-    query = text("""
-        UPDATE patents
-        SET pdf_available = FALSE
-        WHERE id = :patent_id
-    """)
+        with cls.session() as db:
 
-    execute(
+            result = db.execute(
 
-        query,
+                text(
+                    """
+                    SELECT *
+                    FROM patents
+                    WHERE
+                        pdf_url IS NULL
+                    ORDER BY id
+                    """
+                )
 
-        {
-            "patent_id": patent_id
-        }
+            )
 
-    )
-
-def get_no_pdf_count():
-
-    query = text("""
-        SELECT COUNT(*)
-        FROM patents
-        WHERE pdf_available = FALSE
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
-    
-def get_no_pdf_count():
-
-    query = text("""
-        SELECT COUNT(*)
-        FROM patents
-        WHERE pdf_available = FALSE
-    """)
-
-    with engine.begin() as conn:
-
-        return conn.execute(
-            query
-        ).scalar()
+            return result.mappings().all()
 
 
-def get_processed_patent_count():
+    @classmethod
+    def pending_pipeline(cls):
 
-    query = text("""
-        SELECT COUNT(*)
-        FROM patents
-        WHERE images_extracted = TRUE
-    """)
+        with cls.session() as db:
 
-    with engine.begin() as conn:
+            result = db.execute(
 
-        return conn.execute(
-            query
-        ).scalar()
+                text(
+                    """
+                    SELECT *
+                    FROM patents
+                    WHERE
 
+                        processed = FALSE
 
-def get_random_pages(
-    limit
-):
+                        AND
 
-    query = text("""
-        SELECT
-            image_path
-        FROM patent_pages
-        ORDER BY RAND()
-        LIMIT :limit
-    """)
+                        pdf_available = TRUE
 
-    return fetch_all(
+                        AND
 
-        query,
+                        pdf_url IS NOT NULL
 
-        {
-            "limit": limit
-        }
+                    ORDER BY id
+                    """
+                )
 
-    )
+            )
 
+            return result.mappings().all()
+        
+    @classmethod
+    def mark_download_failed(
 
-def get_all_patent_pages():
+        cls,
 
-    query = text("""
-        SELECT
-            id,
-            image_path
-        FROM patent_pages
-    """)
+        patent_id,
 
-    return fetch_all(query)
+        error,
+
+    ):
+
+        with cls.session() as db:
+
+            db.execute(
+
+                text(
+                    """
+                    UPDATE patents
+                    SET
+
+                        pdf_available = FALSE,
+
+                        download_error = :error
+
+                    WHERE
+
+                        id = :patent_id
+                    """
+                ),
+
+                {
+
+                    "patent_id": patent_id,
+
+                    "error": error,
+
+                }
+
+            )
+
+    @classmethod
+    def mark_processing_started(
+        cls,
+        patent_id,
+    ):
+
+        with cls.session() as db:
+            db.execute(
+                text(
+                    """
+                    UPDATE patents
+                    SET
+                        processing_started_at = NOW()
+                    WHERE
+                        id = :patent_id
+                    """
+                ),
+
+                {
+                    "patent_id": patent_id,
+                }
+            )
