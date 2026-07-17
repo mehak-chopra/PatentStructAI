@@ -3,7 +3,7 @@ from database.review_database import (
     get_reviewed_pages
 )
 
-from analysis.chemistry_sampler import (
+from analysis.sample_annotation_pages import (
     collect_pages
 )
 
