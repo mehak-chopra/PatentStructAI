@@ -13,6 +13,7 @@ OUTPUT_DIR.mkdir(
 
 def extract_embedded_images(
     pdf_path,
+    
     patent_number
 ):
 
@@ -94,12 +95,24 @@ def extract_embedded_images(
 
 def render_pdf_pages(
     pdf_path,
-    patent_number
+    patent_number,
+    output_dir=None
 ):
 
+    if output_dir is None:
+
+        patent_dir = (
+
+            OUTPUT_DIR /
+
+            patent_number
+
+        )
+
     patent_dir = (
-        OUTPUT_DIR /
-        patent_number
+        OUTPUT_DIR / patent_number
+        if output_dir is None
+        else Path(output_dir)
     )
 
     patent_dir.mkdir(
