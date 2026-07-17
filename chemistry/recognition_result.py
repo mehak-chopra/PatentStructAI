@@ -269,9 +269,10 @@ class RecognitionResult:
         for similarity and substructure search.
         """
         return (
-            self.is_valid
-            and self.has_canonical_smiles
+            self.success
+            and self.has_smiles
             and self.has_atoms
+            and self.has_bonds
         )
 
 

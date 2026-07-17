@@ -13,12 +13,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import Any, Dict, Optional
 
-from chemistry.fingerprints import FingerprintResult
-
 from chemistry.fingerprints import (
     FingerprintGenerator,
     FingerprintResult,
 )
+
+from chemistry.structure_database import StructureRecord
 
 
 # ------------------------------------------------------------------
@@ -37,7 +37,7 @@ class SimilarityResult:
 
     query: FingerprintResult
 
-    candidate: FingerprintResult
+    candidate: StructureRecord
 
     # ------------------------------------------------------------
     # Similarity Information
@@ -48,16 +48,6 @@ class SimilarityResult:
     metric: str = "Tanimoto"
 
     threshold: float = 0.7
-
-    # ------------------------------------------------------------
-    # Optional Search Information
-    # ------------------------------------------------------------
-
-    patent_id: Optional[str] = None
-
-    page_number: Optional[int] = None
-
-    structure_id: Optional[str] = None
 
     # ------------------------------------------------------------
     # Status
@@ -108,7 +98,7 @@ class SimilarityResult:
     @property
     def has_candidate(self) -> bool:
         """
-        Returns True if the candidate fingerprint exists.
+        Returns True if the candidate structure exists.
         """
         return self.candidate is not None
 
@@ -170,9 +160,9 @@ class SimilarityResult:
             "score_percentage": self.score_percentage,
             "threshold": self.threshold,
             "is_match": self.is_match,
-            "patent_id": self.patent_id,
-            "page_number": self.page_number,
-            "structure_id": self.structure_id,
+            "patent_id": self.candidate.patent_id,
+            "page_number": self.candidate.page_number,
+            "structure_id": self.candidate.structure_id,
             "error": self.error,
         }
 
@@ -193,9 +183,9 @@ class SimilarityResult:
             "similarity_score": self.similarity_score,
             "metric": self.metric,
             "threshold": self.threshold,
-            "patent_id": self.patent_id,
-            "page_number": self.page_number,
-            "structure_id": self.structure_id,
+            "patent_id": self.candidate.patent_id,
+            "page_number": self.candidate.page_number,
+            "structure_id": self.candidate.structure_id,
             "success": self.success,
             "error": self.error,
             "metadata": self.metadata,
@@ -275,7 +265,7 @@ class SimilarityCalculator:
     @staticmethod
     def compare(
         query: FingerprintResult,
-        candidate: FingerprintResult,
+        candidate: StructureRecord,
         metric: str = DEFAULT_METRIC,
         threshold: float = DEFAULT_THRESHOLD,
         **metadata: Any,
@@ -314,21 +304,21 @@ class SimilarityCalculator:
 
             score = FingerprintGenerator.tanimoto(
                 query,
-                candidate,
+                candidate.fingerprint,
             )
 
         elif metric == "dice":
 
             score = FingerprintGenerator.dice(
                 query,
-                candidate,
+                candidate.fingerprint,
             )
 
         elif metric == "cosine":
 
             score = FingerprintGenerator.cosine(
                 query,
-                candidate,
+                candidate.fingerprint,
             )
 
         else:
@@ -360,7 +350,7 @@ class SimilarityCalculator:
     @staticmethod
     def tanimoto(
         query: FingerprintResult,
-        candidate: FingerprintResult,
+        candidate: StructureRecord,
         threshold: float = DEFAULT_THRESHOLD,
         **metadata: Any,
     ) -> SimilarityResult:
@@ -380,7 +370,7 @@ class SimilarityCalculator:
     @staticmethod
     def dice(
         query: FingerprintResult,
-        candidate: FingerprintResult,
+        candidate: StructureRecord,
         threshold: float = DEFAULT_THRESHOLD,
         **metadata: Any,
     ) -> SimilarityResult:
@@ -400,7 +390,7 @@ class SimilarityCalculator:
     @staticmethod
     def cosine(
         query: FingerprintResult,
-        candidate: FingerprintResult,
+        candidate: StructureRecord,
         threshold: float = DEFAULT_THRESHOLD,
         **metadata: Any,
     ) -> SimilarityResult:
