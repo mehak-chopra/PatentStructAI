@@ -112,3 +112,39 @@ desktop.ini
 # Archives
 # --------------------------
 *.zip
+
+# ==========================================
+# Generated HTML Reports
+# ==========================================
+reports/search_report_*.html
+
+# ==========================================
+# Input images used for testing
+# ==========================================
+inputs/
+
+# ==========================================
+# Test PDFs
+# ==========================================
+data/test_pdfs/
+
+# ==========================================
+# Model evaluation artifacts
+# ==========================================
+models/page_classifier/evaluations/
+
+# ==========================================
+# Generated experiment outputs
+# ==========================================
+outputs/page_classifier/
+
+# ==========================================
+# Dataset statistics
+# ==========================================
+datasets/page_classifier/**/*.cache
+datasets/page_classifier/**/dataset_statistics.json
+
+# ==========================================
+# Batch reports
+# ==========================================
+batch_report.json
